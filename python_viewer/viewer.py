@@ -2,13 +2,14 @@ import vtk
 from pathlib import Path
 
 def main():
-    #Loading the dataset head.vti
-    reader = vtk.vtkXMLImageDataReader() # Reader Object
-    reader.SetFileName(Path(__file__).parent.joinpath("head.vti")) # Path to the dataset
+    # Charger le modèle head.vti
+    reader = vtk.vtkXMLImageDataReader()
+    reader.SetFileName(Path(__file__).parent.joinpath("head.vti"))
     reader.Update()
-    min, max = reader.GetOutput().GetScalarRange()
+    min, max = reader.GetOutput().GetScalarRange() # Récupérer le min et le max du scalaire
     model = reader.GetOutputPort()
 
+    # Filtre Isométrique
     filter = vtk.vtkContourFilter()
     filter.SetNumberOfContours(1)
     filter.SetValue(0, 50)
@@ -21,47 +22,43 @@ def main():
     lut.SetHueRange(0.0, 0.6)
     lut.Build()
 
-    # Head Scalar
+    # Scalaire de Head
     scalar_bar = vtk.vtkScalarBarActor()
     scalar_bar.SetLookupTable(lut)
-    scalar_bar.SetTitle("Head")
+    scalar_bar.SetTitle("head value")
     scalar_bar.SetOrientationToVertical()
 
     # Slider
     slider = vtk.vtkSliderRepresentation2D()
     slider.SetMinimumValue(min)
     slider.SetMaximumValue(max)
-    slider.SetValue(20)
+    slider.SetValue(filter.GetValue(1))
     slider.SetTitleText("Countour Value")
-    
-    slider.SetSliderWidth(0.5)
 
-    slider.GetPoint1Coordinate().SetCoordinateSystemToNormalizedDisplay()
-    slider.GetPoint1Coordinate().SetValue(0.1, 0.1)
+    slider.GetPoint1Coordinate().SetCoordinateSystemToNormalizedViewport()
+    slider.GetPoint1Coordinate().SetValue(0.05, 0.15)
 
-    slider.GetPoint2Coordinate().SetCoordinateSystemToNormalizedDisplay()
-    slider.GetPoint2Coordinate().SetValue(0.1, 0.3)
+    slider.GetPoint2Coordinate().SetCoordinateSystemToNormalizedViewport()
+    slider.GetPoint2Coordinate().SetValue(0.3, 0.15)
 
+    # Chargement du modèle dans le mapper
     mapper = vtk.vtkPolyDataMapper()
     mapper.SetInputConnection(filter.GetOutputPort())
     
-    # Link the LookUp Table with mapper
+    # Lien la LookUp Table avec le mapper
     mapper.SetLookupTable(lut)
     mapper.SetUseLookupTableScalarRange(1)
 
+    # Actor
     actor = vtk.vtkActor()
     actor.SetMapper(mapper)
-    
+
+    # Declaration de la fênetre
     window = vtk.vtkRenderWindow()
     window.SetSize(1000, 1000)
 
+    # Déclarateion de l'interactor
     interactor = vtk.vtkRenderWindowInteractor()
-    
-    #WIDGETS
-    slider_widget = vtk.vtkSliderWidget()
-    slider_widget.SetInteractor(interactor)
-    slider_widget.SetRepresentation(slider)
-    slider_widget.On()
     
     interactor.SetRenderWindow(window)
     
@@ -71,7 +68,23 @@ def main():
     renderer.AddActor(actor)
     renderer.AddActor(scalar_bar)
 
-    renderer.SetBackground(0.1, 0.1, 0.4)
+    renderer.SetBackground(0, 0, 0)
+    
+    # Callback du slider
+    def callback(obj, event):
+        # Récupère la valeur dans obj (slider)
+        val = obj.GetRepresentation().GetValue()
+
+        # L'attribut à filter
+        filter.SetValue(0, val)
+
+    # Widget du slider
+    slider_widget = vtk.vtkSliderWidget()
+    slider_widget.SetInteractor(interactor)
+    slider_widget.SetRepresentation(slider)
+    slider_widget.On()
+
+    slider_widget.AddObserver("InteractionEvent", callback)
 
     interactor.Initialize()
     interactor.Start()
