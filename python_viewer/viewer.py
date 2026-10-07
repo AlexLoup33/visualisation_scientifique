@@ -57,7 +57,7 @@ def main():
     window = vtk.vtkRenderWindow()
     window.SetSize(1000, 1000)
 
-    # Déclarateion de l'interactor
+    # Déclaration de l'interactor
     interactor = vtk.vtkRenderWindowInteractor()
     
     interactor.SetRenderWindow(window)
@@ -72,10 +72,11 @@ def main():
     
     # Callback du slider
     def callback(obj, event):
+        #print(f"Interaction {event} attrapé !")
         # Récupère la valeur dans obj (slider)
         val = obj.GetRepresentation().GetValue()
 
-        # L'attribut à filter
+        # L'attribut à attribuer à filter
         filter.SetValue(0, val)
 
     # Widget du slider
